@@ -30,8 +30,6 @@ export default function Home() {
         <p className="text-white/50 text-lg max-w-md mx-auto leading-relaxed">
           Upload any video and get accurate, styled captions burned in automatically — no editing required.
         </p>
-
-        <UploadFile />
       </section>
 
       <Demosection />
