@@ -1,5 +1,7 @@
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "next-themes";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,6 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${sora.variable} h-full antialiased`}
     >
       <body
@@ -31,9 +34,12 @@ export default function RootLayout({ children }) {
           backgroundAttachment: "fixed",
         }}
       >
-        <div className="flex-1 w-full max-w-5xl mx-auto px-6">
-          {children}
-        </div>
+        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+          <div className="flex-1 w-full max-w-5xl mx-auto px-6">
+            {children}
+          </div>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

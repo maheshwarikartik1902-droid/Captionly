@@ -1,17 +1,57 @@
 "use client";
+import uniqid from 'uniqid';
 import React, { useState } from 'react'
-import { WandSparklesIcon, UploadCloudIcon, VideoIcon, ChevronRightIcon, CheckIcon } from "lucide-react";
+import { WandSparklesIcon, UploadCloudIcon, ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { UploadIcon } from "@/components/ui/upload-icon";
-import axios from 'axios';
+import { useUploadThing } from "@/utils/uploadThing";
 import { useDropzone } from 'react-dropzone'
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 
 const Demosection = () => {
 
-    // CORRECT - no spaces
+    const router = useRouter();
+    const [isUploading, setIsUploading] = useState(false);
     const [preview, setPreview] = useState(null);
     const [file, setFile] = useState(null);
 
+
+    const { startUpload } = useUploadThing("videoUploader", {
+        onClientUploadComplete: (res) => {
+            console.log("Uploaded URL:", res[0].ufsUrl);
+        },
+
+        onUploadError: (error) => {
+            console.error(error);
+        },
+    });
+
+
+    const handleGenerate = async () => {
+        if (!file) return;
+        try {
+            setIsUploading(true);
+            toast.loading("Uploading...", { id: "upload", position: "top-center" });
+
+            const newname = uniqid('video-');
+            const ext = file.name.split('.').pop();
+            const newfile = new File([file], `${newname}.${ext}`, { type: file.type });
+
+            const res = await startUpload([newfile]);
+            toast.success("Done!", { id: "upload", position: "top-center" });
+            router.push(`/generate?url=${encodeURIComponent(res[0].ufsUrl)}`);
+ 
+        } catch (error) {
+            toast.error("Upload failed", { id: "upload", position: "top-center" });
+            console.error(error);
+
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    
     const upload = async (e) => {
         e.preventDefault();
         console.log(e);
@@ -20,21 +60,13 @@ const Demosection = () => {
             const file = files[0];
             setPreview(URL.createObjectURL(file));
             setFile(file);
-            try {
-                const res = await axios.postForm("/api/upload", { file });
-
-                console.log(res.data);
-            } catch (error) {
-                console.error("Upload failed:", error);
-                setPreview(null);
-                setFile(null);
-            }
         }
     };
 
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         maxFiles: 1,
+        disabled: isUploading,
         accept: {
             'video/mp4': ['.mp4'],
             'video/quicktime': ['.mov'],
@@ -46,14 +78,6 @@ const Demosection = () => {
                 const file = files[0];
                 setPreview(URL.createObjectURL(file));
                 setFile(file);
-                try {
-                    const res = await axios.postForm("/api/upload", { file });
-                    console.log(res.data);
-                } catch (error) {
-                    console.error("Upload failed:", error);
-                    setPreview(null);
-                    setFile(null);
-                }
             }
         }
     })
@@ -62,7 +86,9 @@ const Demosection = () => {
 
         <div className='flex flex-col items-center justify-center'>
 
-            <label className="mt-8 px-5 py-2 w-36 rounded-full bg-emerald-600 hover:bg-emerald-500 hover:scale-95 text-white text-sm font-medium transition-discrete transition-transform flex items-center gap-2 shadow-lg shadow-emerald-900/40">
+            <label className={`mt-8 px-5 py-2 w-36 rounded-full bg-emerald-600 hover:bg-emerald-500 hover:scale-95 text-white text-sm font-medium transition-discrete transition-transform flex items-center gap-2 shadow-lg shadow-emerald-900/40 ${(!isUploading)
+                                ? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500 hover:scale-95 shadow-lg shadow-emerald-900/40"
+                                : "bg-white/5 text-white/20 border-white/10 cursor-not-allowed"}`}>
                 <UploadCloudIcon className="w-4 h-4" />
                 Choose file
                 <input
@@ -72,29 +98,32 @@ const Demosection = () => {
                     name="file-input"
                     id="file-input"
                     accept="video/*"
+                    disabled={isUploading}
                 />
             </label>
 
 
-            < section className="flex-1 pb-20" >
-
+            <section className="flex-1 pb-20">
 
 
 
                 <div className="flex items-start justify-center gap-20">
                     {(preview && file) ?
-                        <div className="relative rounded-2xl border-2 border-dashed flex items-center justify-center border-white/10 bg-white/3 hover:border-emerald-500/40 hover:bg-emerald-500/3 transition-all duration-300 cursor-pointer overflow-hidden "
-                            style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-                            <video
-                                src={preview}
-                                alt="preview"
-
-                            />
+                        <div className="w-56 shrink-0">
+                            <p className="text-xs text-white/30 uppercase tracking-widest mb-3 font-medium">Input</p>
+                            <div className="relative rounded-2xl border-2 border-dashed flex items-center justify-center border-white/10 bg-white/3 hover:border-emerald-500/40 transition-all duration-300 overflow-hidden"
+                                style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+                                <video
+                                    src={preview}
+                                    controls
+                                    className="w-full h-full object-cover rounded-2xl"
+                                />
+                            </div>
                         </div>
                         :
                         <div className="group w-56 shrink-0" {...getRootProps()}>
                             <p className="text-xs text-white/30 uppercase tracking-widest mb-3 font-medium">Input</p>
-                            <div className="relative rounded-2xl border-2 border-dashed border-white/10 bg-white/3 hover:border-emerald-500/40 hover:bg-emerald-500/3 transition-all duration-300 cursor-pointer overflow-hidden "
+                            <div className="w-56 relative rounded-2xl border-2 border-dashed border-white/10 bg-white/3 hover:border-emerald-500/40 hover:bg-emerald-500/3 transition-all duration-300 cursor-pointer overflow-hidden "
                                 style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
                                 {/* Subtle grid bg */}
                                 <input {...getInputProps()} />
@@ -112,10 +141,12 @@ const Demosection = () => {
                                                 <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10 transition-all duration-300">
                                                     <UploadIcon className="w-6 h-6 text-white/30 group-hover:text-emerald-400 transition-colors duration-300" />
                                                 </div>
+
                                                 <p className="text-white/60 text-sm font-medium mb-1">Drop your video here</p>
                                             </div>
                                             :
                                             <div>
+                                                <UploadIcon className="w-6 h-6 text-white/30 group-hover:text-emerald-400 transition-colors duration-300" />
                                                 <p className="text-white/60 text-sm font-medium mb-1">Click or Drop your video here</p>
                                                 <p className="text-white/25 text-xs">MP4, MOV, WebM · up to 50MB</p>
                                             </div>
@@ -129,67 +160,33 @@ const Demosection = () => {
                     }
 
 
+
                     {/* Arrow / Generate */}
-                    <div className="flex flex-col items-center justify-center gap-3 pt-10 self-center">
-                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                            <WandSparklesIcon className="w-4 h-4 text-white/40" />
-                        </div>
+                    <div className="flex flex-col items-center justify-center gap-4 self-center">
                         <button
-                            disabled={!file}
-                            className={`px-5 py-2.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all duration-300 ${file
-                                    ? "bg-emerald-600 text-white border-emerald-500 cursor-pointer hover:bg-emerald-500 hover:scale-95"
-                                    : "bg-emerald-700/40 text-emerald-400/60 border-emerald-500/20 cursor-not-allowed"
+                            onClick={handleGenerate}
+                            disabled={!(file && !isUploading)}
+                            className={`group relative px-8 py-3 rounded-full text-sm font-semibold border transition-all duration-300 flex items-center gap-2 ${(file && !isUploading)
+                                ? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500 hover:scale-95 shadow-lg shadow-emerald-900/40"
+                                : "bg-white/5 text-white/20 border-white/10 cursor-not-allowed"
                                 }`}
                         >
-                            Generate
+                            <WandSparklesIcon className={`w-4 h-4 transition-colors ${(file && !isUploading) ? "text-white" : "text-white/20"}`} />
+                            Generate Captions
+                            <ChevronRightIcon className={`w-4 h-4 transition-colors ${(file && !isUploading) ? "text-white" : "text-white/20"}`} />
                         </button>
-                        <div className="flex items-center gap-1 text-white/15 text-xs">
-                            <ChevronRightIcon className="w-3 h-3" />
-                        </div>
+                        {!file && (
+                            <p className="text-white/20 text-xs">Upload a video to continue</p>
+                        )}
+                        {file && (
+                            <p className="text-emerald-400/60 text-xs">{file.name}</p>
+                        )}
                     </div>
 
-                    {/* Output Panel */}
-                    <div className="w-56 shrink-0">
-                        <p className="text-xs text-white/30 uppercase tracking-widest mb-3 font-medium">Output</p>
-                        <div className="rounded-2xl border border-white/5 bg-white/3 overflow-hidden relative"
-                            style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-                            {/* Placeholder shimmer */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                                <VideoIcon className="w-8 h-8 text-white/10" />
-                                <p className="text-white/20 text-xs">Output preview</p>
-                            </div>
-                            {/* Caption overlay preview */}
-                            <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-                                <div className="px-4 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/5">
-                                    <p className="text-white/20 text-sm font-medium text-center">captions appear here</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
+
                 </div>
 
-                {/* Settings Strip }
-        <div className="mt-8 p-4 rounded-2xl bg-white/3 border border-white/5 flex flex-wrap items-center gap-4">
-          <span className="text-xs text-white/30 uppercase tracking-widest font-medium">Style</span>
-          {["Minimal", "Bold", "Outline", "Highlight", "Custom"].map((s, i) => (
-            <button key={s}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${i === 0
-                  ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                  : "bg-white/5 border border-white/5 text-white/40 hover:border-white/15 hover:text-white/60"
-                }`}>
-              {s}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-3 text-xs text-white/30">
-            <span>Language</span>
-            <select className="bg-white/5 border border-white/5 rounded-lg px-2.5 py-1.5 text-white/50 text-xs outline-none cursor-pointer hover:border-white/15 transition-colors">
-              <option>Auto detect</option>
-              <option>English</option>
-              <option>Hindi</option>
-              <option>Spanish</option>
-            </select>
-          </div>
-        </div>*/}
             </section >
         </div>
     )
