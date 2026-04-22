@@ -39,9 +39,11 @@ const Demosection = () => {
             const newfile = new File([file], `${newname}.${ext}`, { type: file.type });
 
             const res = await startUpload([newfile]);
+            const videoUrl = res[0].ufsUrl;
+
             toast.success("Done!", { id: "upload", position: "top-center" });
-            router.push(`/generate?url=${encodeURIComponent(res[0].ufsUrl)}`);
- 
+            router.push(`/generate?url=${encodeURIComponent(videoUrl)}`);
+
         } catch (error) {
             toast.error("Upload failed", { id: "upload", position: "top-center" });
             console.error(error);
