@@ -1,10 +1,14 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { WandSparklesIcon } from "lucide-react";
+import { useState, Suspense } from "react";
+import { WandSparklesIcon, Loader2Icon } from "lucide-react";
+import { toast } from "sonner";
+import CaptionEditor from "@/components/TranscriptionItem";
+import PageHeader from "@/components/PageHeader";
+import ResultVideo from "@/components/ResultVideo";
 
 
-export default function GeneratePage() {
+function GeneratePage() {
     const searchParams = useSearchParams();
     const videoUrl = searchParams.get("url");
 
@@ -14,6 +18,7 @@ export default function GeneratePage() {
     async function transcribe() {
         if (!videoUrl || status === "loading") return;
         setStatus("loading");
+        toast.loading("Transcribing...", { id: "transcribe", position: "top-center" });
         try {
             const res = await fetch("/api/transcribe", {
                 method: "POST",
@@ -24,51 +29,65 @@ export default function GeneratePage() {
             if (!res.ok) throw new Error(data.error);
             setCaptions(data.captions);
             setStatus("done");
+            toast.success("Captions ready!", { id: "transcribe", position: "top-center" });
         } catch (err) {
             console.error(err);
             setStatus("error");
+            toast.error("Transcription failed.", { id: "transcribe", position: "top-center" });
         }
     }
 
     return (
-        <div className="p-8 flex flex-row items-center justify-center max-w-2xl mx-auto">
-            {/* Video preview */}
-            <video
-                src={videoUrl ?? ""}
-                controls
-                className="w-full rounded-2xl mb-6 bg-black"
-            />
+        <>
+            <PageHeader />
+            <div className="min-h-screen py-5">
 
-            {/* Trigger button */}
-            <button
-                onClick={transcribe}
-                disabled={status === "loading"}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
-            >
-                <WandSparklesIcon className="w-4 h-4" />
-                {status === "loading" ? "Transcribing..." : "Generate Captions"}
-            </button>
+                {/* Two-column layout */}
+                <div className="grid grid-cols-2 gap-8 items-start">
 
-            {status === "error" && (
-                <p className="mt-4 text-red-400 text-sm">
-                    Transcription failed — check console for details.
-                </p>
-            )}
 
-            {/* Caption list */}
-            {status === "done" && captions.length > 0 && (
-                <ul className="mt-6 space-y-2">
-                    {captions.map((c, i) => (
-                        <li key={i} className="flex gap-4 text-sm">
-                            <span className="text-white/30 w-24 shrink-0 tabular-nums">
-                                {c.start.toFixed(1)}s – {c.end.toFixed(1)}s
-                            </span>
-                            <span className="text-white/70">{c.text}</span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+                    {/* Right — captions editor */}
+                    <div className="flex flex-col gap-3 min-h-125">
+                        <p className="text-xs text-white/30 uppercase tracking-widest font-medium">Captions</p>
+
+                        {status === "idle" && (
+                            <div className="flex-1 flex items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/2 h-64">
+                                <p className="text-white/20 text-sm">Hit generate to start</p>
+                            </div>
+                        )}
+
+                        {status === "loading" && (
+                            <div className="flex-1 flex items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/2 h-64">
+                                <div className="flex flex-col items-center gap-3">
+                                    <Loader2Icon className="w-6 h-6 text-emerald-500 animate-spin" />
+                                    <p className="text-white/30 text-sm">Transcribing audio...</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === "error" && (
+                            <div className="flex-1 flex items-center justify-center rounded-2xl border border-dashed border-red-500/20 bg-red-500/5 h-64">
+                                <p className="text-red-400 text-sm">Transcription failed — try again</p>
+                            </div>
+                        )}
+
+                        {status === "done" && (
+                            <CaptionEditor captions={captions} />
+                        )}
+                    </div>
+                    {/* Left — video + button */}
+                    <ResultVideo videoUrl={videoUrl} transcribe={transcribe} status={status} />
+                </div>
+            </div>
+        </>
     );
 }
- 
+
+// Suspense required for useSearchParams in App Router
+export default function Page() {
+    return (
+        <Suspense fallback={null}>
+            <GeneratePage />
+        </Suspense>
+    );
+}

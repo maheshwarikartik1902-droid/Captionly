@@ -38,7 +38,7 @@ export default function RootLayout({ children }) {
           <div className="flex-1 w-full max-w-5xl mx-auto px-6">
             {children}
           </div>
-          <Toaster />
+          <Toaster /> 
         </ThemeProvider>
       </body>
     </html>

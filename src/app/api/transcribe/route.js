@@ -26,7 +26,6 @@ export async function POST(req) {
             end: seg.end,
             text: seg.text.trim(),
         })) ?? [];
-
         return NextResponse.json({ staus: 200, captions});
 
     } catch (error) {

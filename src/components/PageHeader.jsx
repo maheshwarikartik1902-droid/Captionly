@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const PageHeader = () => {
     return (
-        <nav className="flex items-center justify-between py-5 border-b border-white/5">
+        <nav className="flex items-center justify-between py-2 border-b border-white/5">
             <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
                     <SparklesIcon className="w-4 h-4 text-white" />

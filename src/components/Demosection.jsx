@@ -42,7 +42,7 @@ const Demosection = () => {
             const videoUrl = res[0].ufsUrl;
 
             toast.success("Done!", { id: "upload", position: "top-center" });
-            router.push(`/generate?url=${encodeURIComponent(videoUrl)}`);
+            router.push(`/generate?url=${encodeURIComponent(videoUrl)}&name=${newname}.${ext}`);
 
         } catch (error) {
             toast.error("Upload failed", { id: "upload", position: "top-center" });
