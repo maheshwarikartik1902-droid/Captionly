@@ -2,17 +2,12 @@
 import { useEffect, useState } from "react";
 
 
-export default function CaptionEditor({ captions = [] }) {
-    const [items, setItems] = useState(captions);
+export default function CaptionEditor({ captions = [] , onUpdate}) {
 
-    // sync when parent passes new captions
-    useEffect(() => {
-        setItems(captions);
-    }, [captions]);
 
     const handleChange = (e, index, field) => {
-        setItems(prev =>
-            prev.map((item, i) => {
+        
+            const updatedCaptions = captions.map((item, i) => {
                 if (i !== index) return item;
                 // spread to avoid mutation
                 return {
@@ -20,11 +15,10 @@ export default function CaptionEditor({ captions = [] }) {
                     [field]: field === "text" ? e.target.value : parseFloat(e.target.value) || 0,
                 };
             })
-        );
-        console.log(items);
+            onUpdate(updatedCaptions);
     };
 
-    if (items.length === 0) return null;
+    if (captions.length === 0) return null;
 
     return (
         <div className="flex flex-col h-full">
@@ -41,7 +35,7 @@ export default function CaptionEditor({ captions = [] }) {
                 [&::-webkit-scrollbar-track]:bg-transparent
                 [&::-webkit-scrollbar-thumb]:bg-white/10
                 [&::-webkit-scrollbar-thumb]:rounded-full">
-                {items.map((c, i) => (
+                {captions.map((c, i) => (
                     <li
                         key={i}
                         className="grid grid-cols-[72px_72px_1fr] gap-2 items-center rounded-lg px-2 py-1.5 bg-white/3 hover:bg-white/6 border border-white/5 hover:border-white/10 transition-all"

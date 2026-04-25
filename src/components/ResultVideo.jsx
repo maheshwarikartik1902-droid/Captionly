@@ -6,21 +6,20 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 import { useSearchParams } from "next/navigation";
 
-const ResultVideo = ({ videoUrl, transcribe, status }) => {
+const ResultVideo = ({ videoUrl, transcribe, status, captions }) => {
     const [loaded, setLoaded] = useState(false);
     const [transcoding, setTranscoding] = useState(false);
     const ffmpegRef = useRef(new FFmpeg());
     const videoRef = useRef(null);
     const searchParams = useSearchParams();
     const videoname = searchParams.get("name").split('-')[1];
-    console.log(videoname);
     useEffect(() => {
         if(videoUrl){
             videoRef.current.src = videoUrl;
             load();
         };
     }, []);
-
+    console.log(captions);
     const load = async () => {
         const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
         const ffmpeg = ffmpegRef.current;
@@ -35,17 +34,28 @@ const ResultVideo = ({ videoUrl, transcribe, status }) => {
     }
 
     const transcode = async () => {
-        setTranscoding(true);
+        
         const ffmpeg = ffmpegRef.current;
-        await ffmpeg.writeFile('input.webm', await fetchFile(videoUrl));
-        await ffmpeg.exec(['-i', '', 'output.mp4']);
+        await ffmpeg.writeFile(videoname, await fetchFile(videoUrl));
+        // The exec should stop after 1 second.
+        await ffmpeg.exec(['-i', videoname, 'output.mp4'], 1000);
         const data = await ffmpeg.readFile('output.mp4');
-        setTranscoding(false);
         videoRef.current.src =
             URL.createObjectURL(new Blob([data.buffer], {type: 'video/mp4'}));
-       
     }
 
+
+    const captionsToSrt = (captions) => {
+        let srt = "";
+        captions.forEach((caption, index) => {
+            srt += `${index + 1}\n`;
+            //convert time to HH:MM:SS,MMMM
+            srt += `${new Date(caption.start * 1000).toISOString().substr(11, 8)},000 --> ${new Date(caption.end * 1000).toISOString().substr(11, 8)},000\n`;
+            srt += `${caption.text}\n\n`;
+        });
+        return srt;
+    }
+    console.log(captionsToSrt(captions));
     return (
         <div className="flex flex-col gap-4 sticky top-10">
             <p className="text-xs text-white/30 uppercase tracking-widest font-medium">Preview</p>

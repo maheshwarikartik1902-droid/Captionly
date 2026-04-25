@@ -72,11 +72,11 @@ function GeneratePage() {
                         )}
 
                         {status === "done" && (
-                            <CaptionEditor captions={captions} />
+                            <CaptionEditor captions={captions} onUpdate={setCaptions}/>
                         )}
                     </div>
                     {/* Left — video + button */}
-                    <ResultVideo videoUrl={videoUrl} transcribe={transcribe} status={status} />
+                    <ResultVideo videoUrl={videoUrl} transcribe={transcribe} status={status} captions={captions}/>
                 </div>
             </div>
         </>
