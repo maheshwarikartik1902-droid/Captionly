@@ -13,17 +13,21 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions }) => {
     const videoRef = useRef(null);
     const searchParams = useSearchParams();
     const videoname = searchParams.get("name").split('-')[1];
+    const messageRef = useRef(null);
     useEffect(() => {
-        if(videoUrl){
+        if (videoUrl) {
             videoRef.current.src = videoUrl;
             load();
         };
     }, []);
-    console.log(captions);
+
     const load = async () => {
         const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
         const ffmpeg = ffmpegRef.current;
-
+        ffmpeg.on('log', ({ message }) => {
+            messageRef.current.innerHTML = message;
+            console.log(message);
+        });
         // toBlobURL is used to bypass CORS issue, urls with the same
         // domain can be used directly.
         await ffmpeg.load({
@@ -34,14 +38,22 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions }) => {
     }
 
     const transcode = async () => {
-        
         const ffmpeg = ffmpegRef.current;
         await ffmpeg.writeFile(videoname, await fetchFile(videoUrl));
+        await ffmpeg.writeFile('subtitle.srt', captionsToSrt(captions));
+        await ffmpeg.writeFile("font.ttf", await fetchFile("/fonts/Roboto-Regular.ttf"));
+
+
         // The exec should stop after 1 second.
-        await ffmpeg.exec(['-i', videoname, 'output.mp4'], 1000);
+        await ffmpeg.exec([
+            "-i", videoname,
+            "-vf", "subtitles=subtitle.srt:fontsdir=/:force_style='FontName=Roboto",  // look for fonts in root
+            "-preset", "ultrafast",
+            "output.mp4"
+        ]);
         const data = await ffmpeg.readFile('output.mp4');
         videoRef.current.src =
-            URL.createObjectURL(new Blob([data.buffer], {type: 'video/mp4'}));
+            URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
     }
 
 
@@ -50,14 +62,16 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions }) => {
         captions.forEach((caption, index) => {
             srt += `${index + 1}\n`;
             //convert time to HH:MM:SS,MMMM
-            srt += `${new Date(caption.start * 1000).toISOString().substr(11, 8)},000 --> ${new Date(caption.end * 1000).toISOString().substr(11, 8)},000\n`;
+            srt += `${new Date(caption.start * 1000).toISOString().substr(11, 12).replace('.', ',')} --> ${new Date(caption.end * 1000).toISOString().substr(11, 12).replace('.', ',')}\n`;
             srt += `${caption.text}\n\n`;
         });
         return srt;
     }
+
     console.log(captionsToSrt(captions));
     return (
         <div className="flex flex-col gap-4 sticky top-10">
+            <p ref={messageRef} className="text-white/20 text-xs truncate min-h-4" />
             <p className="text-xs text-white/30 uppercase tracking-widest font-medium">Preview</p>
             <video
                 ref={videoRef}
