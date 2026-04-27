@@ -14,6 +14,15 @@ function GeneratePage() {
 
     const [captions, setCaptions] = useState([]);
     const [status, setStatus] = useState("idle");
+    const [captionStyle, setCaptionStyle] = useState({
+        primaryColor: "#ffffff",
+        outlineColor: "#000000",
+        fontSize: 18,
+        bold: false,
+        position: "bottom", // top | middle | bottom
+        uppercase: false,
+        box: false,
+    });
 
     async function transcribe() {
         if (!videoUrl || status === "loading") return;
@@ -72,11 +81,20 @@ function GeneratePage() {
                         )}
 
                         {status === "done" && (
-                            <CaptionEditor captions={captions} onUpdate={setCaptions}/>
+                            <CaptionEditor 
+                            captions={captions} 
+                            captionStyle={captionStyle} 
+                            setCaptionStyle={setCaptionStyle}
+                            onUpdate={[setCaptions]} />
                         )}
                     </div>
                     {/* Left — video + button */}
-                    <ResultVideo videoUrl={videoUrl} transcribe={transcribe} status={status} captions={captions}/>
+                    <ResultVideo 
+                    videoUrl={videoUrl} 
+                    transcribe={transcribe} 
+                    status={status} 
+                    captions={captions} 
+                    captionStyle={captionStyle}/>
                 </div>
             </div>
         </>
