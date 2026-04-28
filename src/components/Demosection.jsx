@@ -18,6 +18,7 @@ const Demosection = () => {
 
 
     const { startUpload } = useUploadThing("videoUploader", {
+
         onClientUploadComplete: (res) => {
             console.log("Uploaded URL:", res[0].ufsUrl);
         },
