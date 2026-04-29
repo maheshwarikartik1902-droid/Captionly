@@ -16,10 +16,6 @@ export default function Home() {
 
       {/* Hero */}
       <section className="text-center pt-20 pb-14 flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-6">
-          <SparklesIcon className="w-3 h-3" />
-          AI-powered captions in seconds
-        </div>
         <h1
           className="text-5xl font-semibold text-white leading-tight tracking-tight mb-4"
           style={{ fontFamily: "var(--font-sora)" }}

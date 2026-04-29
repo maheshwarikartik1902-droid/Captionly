@@ -4,6 +4,9 @@ import { WandSparklesIcon, Loader2Icon } from "lucide-react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 import { useSearchParams } from "next/navigation";
+import { div } from "motion/react-client";
+import { Progress } from "@/components/ui/progress"
+import { Field, FieldLabel } from "@/components/ui/field"
 
 const ResultVideo = ({ videoUrl, transcribe, status, captions, captionStyle }) => {
     const [loaded, setLoaded] = useState(false);
@@ -16,6 +19,7 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions, captionStyle }) =
     const searchParams = useSearchParams();
     const videoname = searchParams.get("name")?.split("-")[1] ?? "input.mp4";
     const marginV = captionStyle.position === "top" ? 90 : captionStyle.position === "middle" ? 50 : 20;
+    const [progress, setProgress] = useState(0);
 
     const toFFmpegColor = (hex) => {
         const r = hex.slice(1, 3);
@@ -45,26 +49,11 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions, captionStyle }) =
     const load = async () => {
         const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
         const ffmpeg = ffmpegRef.current;
+
         await ffmpeg.load({
             coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
             wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
         });
-        await new Promise((resolve, reject) => {
-                videoRef.current.onloadedmetadata = resolve;
-            });
-
-            const duration = videoRef.current.duration;
-
-            console.log("duration", duration);
-            ffmpeg.on("log", ({ message }) => {
-                if (messageRef.current) messageRef.current.innerHTML = message;
-                const regexResult = /time=([0-9:.]+)/.exec(message);
-
-                if (regexResult && regexResult[1]) {
-                    const time = regexResult[1];
-                    console.log("time", time);
-                }
-            });
         setLoaded(true);
     };
 
@@ -82,16 +71,32 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions, captionStyle }) =
     };
 
     const transcode = async () => {
-        if (transcoding || !loaded) return;
         setTranscoding(true);
+        if (transcoding || !loaded) return;
         try {
             const ffmpeg = ffmpegRef.current;
             await ffmpeg.writeFile(videoname, await fetchFile(videoUrl));
+
             const processedCaptions = captionStyle.uppercase
                 ? captions.map(c => ({ ...c, text: c.text.toUpperCase() }))
                 : captions;
             await ffmpeg.writeFile("subtitle.srt", captionsToSrt(processedCaptions));
-            await ffmpeg.writeFile("font.ttf", await fetchFile("/fonts/Roboto-Regular.ttf"));
+            await ffmpeg.writeFile("font.ttf", await fetchFile("/fonts/Roboto-Regular.ttf"));;
+            const duration = videoRef.current.duration;
+
+            ffmpeg.on("log", ({ message }) => {
+                if (messageRef.current) messageRef.current.innerHTML = message;
+                const regexResult = /time=([0-9:.]+)/.exec(message);
+
+                if (regexResult && regexResult[1]) {
+                    const time = regexResult[1];
+                    const [hours, minutes, seconds] = time.split(":");
+                    const totalSeconds = parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds);
+                    const progress = (totalSeconds / duration);
+                    console.log(progress);
+                    setProgress(progress);
+                }
+            });
             await ffmpeg.exec([
                 "-i", videoname,
                 "-vf", `subtitles=subtitle.srt:fontsdir=/:force_style='${forceStyle}'`,
@@ -105,14 +110,40 @@ const ResultVideo = ({ videoUrl, transcribe, status, captions, captionStyle }) =
         } catch (err) {
             console.error("Transcode failed:", err);
         } finally {
-            setTranscoding(false); // ✅ always runs
+            setTranscoding(false);
+            setProgress(1);
         }
     };
 
+    function getStatusText(progress) {
+        if (progress < 0.1) return "Warming things up...";
+        if (progress < 0.25) return "Loading magic...";
+        if (progress < 0.4) return "Analyzing frames...";
+        if (progress < 0.6) return "Cooking pixels...";
+        if (progress < 0.8) return "Almost there...";
+        if (progress < 0.95) return "Polishing output...";
+        return "Finishing touches...";
+    }
     return (
         <div className="flex flex-col gap-4 sticky top-10">
             <p ref={messageRef} className="text-white/20 text-xs truncate min-h-4 hidden" />
             <p className="text-xs text-white/30 uppercase tracking-widest font-medium">Preview</p>
+
+            
+            {progress > 0 && progress < 1 && transcoding && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-xl">
+                    <div className="w-[80%] max-w-md flex flex-col gap-2">
+                        <span className="text-white/80 text-sm animate-pulse text-center">
+                            {getStatusText(Math.min(progress, 1))}
+                        </span>
+                        <Progress
+                            value={Math.min(progress, 1) * 100}
+                            className="w-full"
+                        />
+                    </div>
+                </div>
+            )}
+
             <video
                 ref={videoRef}
                 controls
