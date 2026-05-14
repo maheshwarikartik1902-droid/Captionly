@@ -9,26 +9,26 @@
 
 ---
 
-## ✨ What is Captionly?
+## 1. What is Captionly?
 
 Captionly is an AI-powered video captioning app built with Next.js. Users upload a video, Groq Whisper transcribes it, they can edit the captions, and the final video is downloaded with captions burned in — entirely in the browser using FFmpeg WebAssembly. No server-side video processing. No hidden costs.
 
 ---
 
-## 🚀 Features
+## 2. Features
 
-- 🎬 **Drag & drop video upload** — supports MP4, MOV, WebM
-- ⚡ **Instant local preview** — see your video before it uploads
-- 🤖 **AI transcription** — powered by Groq Whisper (`whisper-large-v3-turbo`)
-- ✏️ **Editable captions** — tweak any caption line before applying
-- 🎞️ **Client-side caption burning** — FFmpeg WASM runs entirely in the browser
-- 📥 **Download ready** — get your captioned video with one click
-- 🔒 **Privacy-first** — videos processed in your browser, not on a server
-- 🌑 **Dark mode** — sleek dark UI with emerald accents
+-  **Drag & drop video upload** — supports MP4, MOV, WebM
+-  **Instant local preview** — see your video before it uploads
+-  **AI transcription** — powered by Groq Whisper (`whisper-large-v3-turbo`)
+-  **Editable captions** — tweak any caption line before applying
+-  **Client-side caption burning** — FFmpeg WASM runs entirely in the browser
+-  **Download ready** — get your captioned video with one click
+-  **Privacy-first** — videos processed in your browser, not on a server
+-  **Dark mode** — sleek dark UI with emerald accents
 
 ---
 
-## 🛠 Tech Stack
+## 3. Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -45,7 +45,7 @@ Captionly is an AI-powered video captioning app built with Next.js. Users upload
 
 ---
 
-## 🔄 How It Works
+## 4. How It Works
 
 ```
 1. User drags or picks a video file
@@ -82,7 +82,7 @@ Captionly is an AI-powered video captioning app built with Next.js. Users upload
 
 ---
 
-## 🙏 Acknowledgements
+## 5. Acknowledgements
 
 - [Groq](https://groq.com) for blazing fast Whisper inference
 - [Uploadthing](https://uploadthing.com) for dead simple file uploads
